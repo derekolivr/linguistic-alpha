@@ -1,0 +1,10 @@
+# Python
+__pycache__/
+*.pyc
+venv/
+
+# Cursor
+.cursor/
+
+# macOS
+.DS_Store
