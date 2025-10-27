@@ -1,0 +1,14 @@
+[
+    {
+        "ticker": "AAPL",
+        "date": "2023-10-27",
+        "speaker": "Tim Cook",
+        "text": "This was a strong quarter for Apple. We are looking forward to future growth and innovation."
+    },
+    {
+        "ticker": "GOOGL",
+        "date": "2023-10-25",
+        "speaker": "Sundar Pichai",
+        "text": "Our fundamentals are solid. We generally see positive trends in our cloud business."
+    }
+]
