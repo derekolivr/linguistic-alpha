@@ -1,40 +1,30 @@
 import json
 import nltk
-from nltk.sentiment.vader import SentimentIntensityAnalyzer
 import textstat
 import pandas as pd
 import os
+import re
+from nltk.sentiment.vader import SentimentIntensityAnalyzer
 
 def download_nltk_resources():
-    """Download necessary NLTK resources."""
-    try:
-        nltk.data.find('tokenizers/punkt')
-    except LookupError:
-        nltk.download('punkt')
-    try:
-        nltk.data.find('sentiment/vader_lexicon.zip')
-    except LookupError:
-        nltk.download('vader_lexicon')
-    try:
-        nltk.data.find('taggers/averaged_perceptron_tagger')
-    except LookupError:
-        nltk.download('averaged_perceptron_tagger')
-    try:
-        nltk.data.find('taggers/averaged_perceptron_tagger_eng')
-    except LookupError:
-        nltk.download('averaged_perceptron_tagger_eng')
-    try:
-        nltk.data.find('taggers/universal_tagset')
-    except LookupError:
-        nltk.download('universal_tagset')
+    """Download necessary NLTK resources if not already present."""
+    resources = {
+        'tokenizers/punkt': 'punkt',
+        'sentiment/vader_lexicon.zip': 'vader_lexicon',
+        'taggers/averaged_perceptron_tagger': 'averaged_perceptron_tagger'
+    }
+    for path, resource_id in resources.items():
+        try:
+            nltk.data.find(path)
+        except LookupError:
+            print(f"NLTK resource '{resource_id}' not found. Downloading...")
+            nltk.download(resource_id)
 
 def find_project_root(marker='requirements.txt'):
     """Find the project root by looking for a marker file."""
     try:
-        # This works when running as a .py script
         start_dir = os.path.dirname(os.path.abspath(__file__))
     except NameError:
-        # Fallback for interactive environments like Jupyter
         start_dir = os.getcwd()
 
     current_dir = start_dir
@@ -43,21 +33,23 @@ def find_project_root(marker='requirements.txt'):
             return current_dir
         parent_dir = os.path.dirname(current_dir)
         if parent_dir == current_dir:
-            raise FileNotFoundError(f"Project root marker '{marker}' not found from '{start_dir}'.")
+            # Fallback for when the script is not in a project structure
+            print(f"Warning: Project root marker '{marker}' not found. Using current directory '{start_dir}'.")
+            return start_dir
         current_dir = parent_dir
 
-def load_mock_data(filepath=None):
-    """Load mock data from a JSON file."""
-    if filepath is None:
-        project_root = find_project_root()
-        filepath = os.path.join(project_root, 'data', 'mock_data.json')
-        
+def load_mock_data(filename, project_root):
+    """Load mock data from a JSON file within the project structure."""
+    filepath = os.path.join(project_root, 'data', filename)
+    if not os.path.exists(filepath):
+        raise FileNotFoundError(f"Mock data file not found at: {filepath}. Please ensure it exists.")
     with open(filepath, 'r') as f:
         return json.load(f)
 
-def calculate_linguistic_features(data):
+def calculate_core_linguistic_features(data):
     """
-    Calculate linguistic features for each text entry in the data.
+    Calculates "Core" linguistic features from standard filings (10-Ks, 10-Qs).
+    This function profiles the general communication style of a company.
     """
     sid = SentimentIntensityAnalyzer()
     features = []
@@ -72,19 +64,19 @@ def calculate_linguistic_features(data):
         # 1. Sentence Complexity (Flesch-Kincaid Grade Level)
         complexity_score = textstat.flesch_kincaid_grade(text)
         
-        # 2. Sentiment Score
+        # 2. General Sentiment Score
         sentiment_score = sid.polarity_scores(text)['compound']
 
-        # 3. Generalizing Language
+        # 3. Generalizing Language Density
         generalizing_score = sum(1 for word in tokens if word in generalizing_words) / len(tokens) if tokens else 0
         
-        # 4. Self-Reference
+        # 4. Self-Reference Density
         self_reference_score = sum(1 for word in tokens if word in self_reference_words) / len(tokens) if tokens else 0
         
-        # 5. Tense Analysis
-        tagged_words = nltk.pos_tag(tokens, tagset='universal')
-        future_tense_verbs = [word for word, tag in tagged_words if tag in ['VERB']] # Modal verbs are tagged as VERB with universal tagset
-        past_tense_verbs = [word for word, tag in tagged_words if tag in ['VERB']]
+        # 5. Tense Analysis (Corrected for accuracy)
+        tagged_words = nltk.pos_tag(tokens)
+        future_tense_verbs = [word for word, tag in tagged_words if tag == 'MD']  # MD = Modal verb (will, shall, etc.)
+        past_tense_verbs = [word for word, tag in tagged_words if tag == 'VBD']  # VBD = Verb, past tense
         
         future_tense_ratio = len(future_tense_verbs) / len(tokens) if tokens else 0
         past_tense_ratio = len(past_tense_verbs) / len(tokens) if tokens else 0
@@ -104,8 +96,87 @@ def calculate_linguistic_features(data):
         
     return pd.DataFrame(features)
 
+def calculate_catalyst_score(data):
+    """
+    Calculates "Catalyst" event scores from crucial, event-driven texts.
+    This function analyzes severity and intent, not general style.
+    """
+    features = []
+
+    # Specialized dictionaries for financial context
+    financial_negative_words = [
+        'loss', 'decline', 'impairment', 'volatile', 'risk', 'uncertainty', 'liability', 
+        'default', 'restatement', 'investigation', 'downside', 'weakness', 'claim', 'alleges'
+    ]
+    fraud_keywords = [
+        'fraud', 'sham', 'mislead', 'deception', 'undisclosed', 'unaccounted', 
+        'manipulation', 'misstatement', 'illegal', 'scandal'
+    ]
+
+    for entry in data:
+        text = entry['text']
+        event_type = entry['event_type']
+        tokens = nltk.word_tokenize(text.lower())
+        
+        # 1. Financial-Specific Negative Sentiment
+        fin_neg_score = sum(1 for word in tokens if word in financial_negative_words) / len(tokens) if tokens else 0
+
+        # 2. Fraud Keyword Density
+        fraud_score = sum(1 for word in tokens if word in fraud_keywords) / len(tokens) if tokens else 0
+
+        # 3. Data Specificity (Credibility proxy)
+        # Measures the density of numbers in the text.
+        digits = sum(c.isdigit() for c in text)
+        specificity_score = digits / len(text) if text else 0
+
+        # Combine features into a final "Catalyst Score"
+        # The weights here are a starting point and would be optimized in a full backtest.
+        # A higher score indicates a more severe negative event.
+        catalyst_score = (fin_neg_score * 0.4) + (fraud_score * 0.4) + (specificity_score * 0.2)
+        
+        # Event-Type Logic: A rebuttal is scored differently.
+        # For this example, we simply note the type, but a real model could have different logic.
+        if event_type == "Company_Rebuttal":
+            # A good rebuttal should be specific and low on negative words.
+            # So, a low score is better for the company.
+            final_score_label = "Rebuttal_Severity_Score"
+        else:
+            final_score_label = "Attack_Score"
+
+        feature_entry = {
+            'ticker': entry['ticker'],
+            'date': entry['date'],
+            'event_type': event_type,
+            'source': entry['source'],
+            final_score_label: round(catalyst_score * 1000, 2), # Scale for readability
+            'specificity_score': round(specificity_score, 4)
+        }
+        features.append(feature_entry)
+
+    return pd.DataFrame(features)
+
+
 if __name__ == "__main__":
+    # --- Setup ---
     download_nltk_resources()
-    mock_data = load_mock_data()
-    features_df = calculate_linguistic_features(mock_data)
-    print(features_df)
+    try:
+        project_root = find_project_root()
+
+        # --- Part 1: Analyze "Core" Company Filings ---
+        print("--- Analyzing Core Signals (Company Filings) ---")
+        core_mock_data = load_mock_data('mock_filings.json', project_root)
+        core_features_df = calculate_core_linguistic_features(core_mock_data)
+        print("Core Linguistic Features DataFrame:")
+        print(core_features_df)
+        print("\n" + "="*50 + "\n")
+
+        # --- Part 2: Analyze "Catalyst" Crucial Events ---
+        print("--- Analyzing Catalyst Signals (Crucial Events) ---")
+        catalyst_mock_data = load_mock_data('mock_events.json', project_root)
+        catalyst_features_df = calculate_catalyst_score(catalyst_mock_data)
+        print("Catalyst Event Score DataFrame:")
+        print(catalyst_features_df)
+
+    except FileNotFoundError as e:
+        print(f"Error: {e}")
+        print("Please ensure you have a 'data' folder in your project root with 'mock_filings.json' and 'mock_events.json'.")
