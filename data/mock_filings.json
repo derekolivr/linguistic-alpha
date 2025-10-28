@@ -1,25 +1,25 @@
 [
   {
-    "ticker": "ENRN",
-    "date": "1999-04-12",
+    "ticker": "MSFT",
+    "date": "2022-10-25",
     "speaker": "CEO",
     "text": "We had a fantastic quarter. Our earnings are strong, and our growth trajectory is excellent. We are confident in our strategy and our team's ability to execute. The fundamentals of our business are solid."
   },
   {
-    "ticker": "ENRN",
-    "date": "1999-04-12",
+    "ticker": "MSFT",
+    "date": "2022-10-25",
     "speaker": "CFO",
     "text": "Our financial performance this quarter reflects the successful execution of our business plan. We delivered strong results, with revenues up 15% year-over-year. We are managing our costs effectively and our balance sheet remains healthy."
   },
   {
-    "ticker": "ENRN",
-    "date": "2000-10-27",
+    "ticker": "GOOG",
+    "date": "2022-10-25",
     "speaker": "CEO",
     "text": "The quarter's performance, generally speaking, was in line with the board's revised expectations, notwithstanding certain market-based headwinds. We are leveraging synergistic opportunities within our de-risked asset portfolio to maximize stakeholder value going forward."
   },
   {
-    "ticker": "ENRN",
-    "date": "2000-10-27",
+    "ticker": "GOOG",
+    "date": "2022-10-25",
     "speaker": "CFO",
     "text": "From a financial perspective, the intricate leveraging of our special purpose entities has allowed for a non-traditional but ultimately beneficial recognition of assets, which, while complex, is fully compliant with the established, albeit evolving, accounting standards. The underlying fundamentals are typically strong."
   },

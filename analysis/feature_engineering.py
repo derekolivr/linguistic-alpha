@@ -1,3 +1,13 @@
+# %% [markdown]
+# # Psycholinguistic Feature Engineering
+# 
+# This script is responsible for feature engineering. It takes raw text data from corporate communications (like earnings calls or SEC filings) and calculates a vector of psycholinguistic features. These features are designed to capture the tone, style, and potential subtext of the communication, which can then be used to predict financial market outcomes like stock volatility.
+# 
+# The script is divided into two main feature calculation functions:
+# 1.  `calculate_core_linguistic_features`: Analyzes the general communication style from standard filings.
+# 2.  `calculate_catalyst_score`: Analyzes severity and intent from crucial, event-driven texts.
+
+# %%
 import json
 import nltk
 import textstat
@@ -6,6 +16,12 @@ import os
 import re
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 
+# %% [markdown]
+# ## Setup and Helper Functions
+# 
+# These functions handle the necessary setup, such as downloading language resources and locating the project's data files in a robust way.
+
+# %%
 def download_nltk_resources():
     """Download necessary NLTK resources if not already present."""
     resources = {
@@ -20,6 +36,7 @@ def download_nltk_resources():
             print(f"NLTK resource '{resource_id}' not found. Downloading...")
             nltk.download(resource_id)
 
+# %%
 def find_project_root(marker='requirements.txt'):
     """Find the project root by looking for a marker file."""
     try:
@@ -38,6 +55,7 @@ def find_project_root(marker='requirements.txt'):
             return start_dir
         current_dir = parent_dir
 
+# %%
 def load_mock_data(filename, project_root):
     """Load mock data from a JSON file within the project structure."""
     filepath = os.path.join(project_root, 'data', filename)
@@ -46,6 +64,12 @@ def load_mock_data(filename, project_root):
     with open(filepath, 'r') as f:
         return json.load(f)
 
+# %% [markdown]
+# ## 1. Core Linguistic Features
+# 
+# This function calculates "Core" linguistic features from standard, recurring filings like 10-Ks and 10-Qs. The goal is to profile the *general communication style* of a company over time. These features are not designed to capture sudden events but rather the underlying tendencies in their language.
+
+# %%
 def calculate_core_linguistic_features(data):
     """
     Calculates "Core" linguistic features from standard filings (10-Ks, 10-Qs).
@@ -96,6 +120,12 @@ def calculate_core_linguistic_features(data):
         
     return pd.DataFrame(features)
 
+# %% [markdown]
+# ## 2. Catalyst Event Score
+# 
+# This function calculates a "Catalyst" score from crucial, event-driven texts, such as a short-seller report or a company's rebuttal. Unlike the core features, this analysis focuses on **severity and intent**, using specialized dictionaries to detect signs of financial distress or fraudulent language.
+
+# %%
 def calculate_catalyst_score(data):
     """
     Calculates "Catalyst" event scores from crucial, event-driven texts.
@@ -155,7 +185,12 @@ def calculate_catalyst_score(data):
 
     return pd.DataFrame(features)
 
+# %% [markdown]
+# ## Main Execution Block
+# 
+# This block demonstrates how to use the functions in this script. It loads the mock data for both core filings and catalyst events, calculates the respective features, and prints the resulting DataFrames.
 
+# %%
 if __name__ == "__main__":
     # --- Setup ---
     download_nltk_resources()

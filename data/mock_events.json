@@ -1,0 +1,23 @@
+[
+  {
+    "ticker": "TSLA",
+    "date": "2023-03-01",
+    "event_type": "Short_Seller_Report",
+    "source": "Hindenburg Research",
+    "text": "We are short TSLA. Our investigation has revealed undisclosed safety concerns and potential accounting irregularities. We believe the company has mislead investors regarding its production capacity and faces significant downside risk. The recent decline in margins is a clear signal of underlying weakness."
+  },
+  {
+    "ticker": "TSLA",
+    "date": "2023-03-02",
+    "event_type": "Company_Rebuttal",
+    "source": "Tesla Inc.",
+    "text": "The recent report from Hindenburg is a sham, filled with misstatements and baseless claims from a short-seller trying to manipulate our stock. Our production numbers are solid; we produced 440,808 vehicles in Q1 and delivered 422,875. We stand by our accounting, which is fully audited. This is a clear case of illegal market manipulation."
+  },
+  {
+    "ticker": "GOOG",
+    "date": "2022-11-15",
+    "event_type": "Activist_Investor_Letter",
+    "source": "TCI Fund Management",
+    "text": "We believe Alphabet is a fantastic business, but it is carrying excessive costs. The number of employees has grown 20% per year since 2017. This is not justified. Management's reluctance to address the bloated headcount and the losses in Other Bets has created uncertainty and risk for shareholders. We allege that this lack of cost control is impacting profitability."
+  }
+]
