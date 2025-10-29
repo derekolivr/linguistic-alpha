@@ -18,10 +18,6 @@ def setup_path():
             project_root = project_root.split('dashboard')[0]
     return project_root
 
-project_root = setup_path()
-from utils.calculations import calculate_historical_pnl
-
-
 # --- Data Loading ---
 @st.cache_data
 def load_data(root_path):

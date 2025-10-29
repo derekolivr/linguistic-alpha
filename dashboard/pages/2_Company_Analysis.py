@@ -1,5 +1,5 @@
 import streamlit as st
-from helpers import predict_stock_price, load_data, setup_path
+from dashboard.helpers import predict_stock_price, load_data, setup_path
 
 st.set_page_config(
     page_title="Company Analysis",

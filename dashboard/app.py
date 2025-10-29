@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from dashboard.helpers import setup_path
+from helpers import setup_path
 
 # --- User Management (for demo purposes) ---
 if 'users' not in st.session_state:
