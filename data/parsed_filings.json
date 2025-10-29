@@ -1,0 +1,44 @@
+[
+  {
+    "ticker": "AAPL",
+    "date": "2023-06-30",
+    "section": "MD&A",
+    "text": "Management’s Discussion and Analysis. During the third quarter, we achieved record sales in our services division. We expect this trend to continue into the next quarter. Our hardware sales were stable, with a 5% increase in iPhone revenue. Our guidance for the fourth quarter is cautiously optimistic.",
+    "source": "scraper/downloads/AAPL/aapl-20230630.htm"
+  },
+  {
+    "ticker": "AAPL",
+    "date": "2023-06-30",
+    "section": "Risk_Factors",
+    "text": "Risk Factors. An investment in our common stock involves risk. We are subject to intense competition. Global economic conditions could adversely affect the Company. We also face risks related to our supply chain and manufacturing capabilities.",
+    "source": "scraper/downloads/AAPL/aapl-20230630.htm"
+  },
+  {
+    "ticker": "AAPL",
+    "date": "2023-09-30",
+    "section": "MD&A",
+    "text": "Management’s Discussion and Analysis of Financial Condition. This past quarter showed strong growth across all segments, exceeding our expectations. We anticipate that our ongoing investments in R&D will drive future innovation. We project a revenue increase of approximately 8% for the holiday season.",
+    "source": "scraper/downloads/AAPL/aapl-20230930.htm"
+  },
+  {
+    "ticker": "AAPL",
+    "date": "2023-09-30",
+    "section": "Risk_Factors",
+    "text": "Risk Factors. An investment in our common stock involves risk. We are subject to intense competition. Global economic conditions could materially and adversely affect the Company. Furthermore, new regulatory scrutiny in international markets presents a significant challenge and could impact our services revenue.",
+    "source": "scraper/downloads/AAPL/aapl-20230930.htm"
+  },
+  {
+    "ticker": "MSFT",
+    "date": "2023-09-30",
+    "section": "MD&A",
+    "text": "Management’s Discussion and Analysis. Our cloud segment continues to be a primary driver of growth. We believe our investments in artificial intelligence will yield significant results. We achieved a 15% increase in Azure revenue. Our future outlook is positive and we project continued double-digit growth.",
+    "source": "scraper/downloads/MSFT/msft-20230930.htm"
+  },
+  {
+    "ticker": "MSFT",
+    "date": "2023-09-30",
+    "section": "Risk_Factors",
+    "text": "Risk Factors. Our operations are subject to various risks. Cybersecurity threats are a constant and evolving challenge that could harm our business. We may be subject to legal proceedings and regulatory inquiries that could be costly. Our success depends on our ability to innovate and adapt to technological changes.",
+    "source": "scraper/downloads/MSFT/msft-20230930.htm"
+  }
+]

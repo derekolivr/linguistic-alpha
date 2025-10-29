@@ -1,49 +1,51 @@
-import nltk
-import textstat
+# analysis/features/mda.py (No NLTK Tokenizer)
 import pandas as pd
+import nltk
+import os
+import sys
+import re # <-- Import the regular expression library
+
+# --- Robust Path Setup to find and configure NLTK ---
+# Still needed for sentiment analysis
+try:
+    project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    if project_root not in sys.path:
+        sys.path.append(project_root)
+except NameError:
+    project_root = os.getcwd()
+
+from analysis.helpers import configure_nltk_path
+configure_nltk_path()
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 
 def calculate_mda_features(data):
-    """
-    Calculates features from MD&A sections, focusing on forward-looking statements
-    and risk disclosures.
-    """
-    sid = SentimentIntensityAnalyzer()
+    """Calculates features UNIQUE to MD&A sections."""
+    if not isinstance(data, list) or not data:
+        return pd.DataFrame()
+        
     features = []
 
-    forward_looking_words = [
-        "will", "expect", "believe", "future", "outlook", "guidance", "project", "anticipate"
-    ]
-    risk_words = [
-        "risk", "uncertain", "depend", "compete", "threat", "challenge", "could", "may"
-    ]
+    forward_looking_words = ["will", "expect", "believe", "future", "outlook", "guidance", "project", "anticipate"]
+    positive_words = ["achieved", "growth", "strong", "record", "exceeded", "successful"]
 
     for entry in data:
-        text = entry['text']
-        tokens = nltk.word_tokenize(text.lower())
+        text = entry.get('text', '')
+        if not text: continue
+        
+        # --- REPLACEMENT FOR NLTK TOKENIZER ---
+        tokens = re.findall(r'\b\w+\b', text.lower())
+        if not tokens: continue
 
-        # 1. Forward-Looking Statement Ratio
-        forward_looking_ratio = sum(1 for word in tokens if word in forward_looking_words) / len(tokens) if tokens else 0
-
-        # 2. Risk Factor Density
-        risk_factor_density = sum(1 for word in tokens if word in risk_words) / len(tokens) if tokens else 0
-
-        # 3. Quantitative Disclosure Ratio (as a proxy for concreteness)
-        quantitative_ratio = sum(1 for word in tokens if word.isdigit()) / len(tokens) if tokens else 0
-
-        # Re-use existing metrics
-        complexity_score = textstat.flesch_kincaid_grade(text)
-        sentiment_score = sid.polarity_scores(text)['compound']
-
-        feature_entry = {
-            'ticker': entry['ticker'],
-            'date': entry['date'],
-            'complexity_score': complexity_score,
-            'sentiment_score': sentiment_score,
+        forward_looking_ratio = sum(1 for word in tokens if word in forward_looking_words) / len(tokens)
+        quantitative_tokens = re.findall(r'\d+', text)
+        quantitative_ratio = len(quantitative_tokens) / len(tokens)
+        positive_tone_density = sum(1 for word in tokens if word in positive_words) / len(tokens)
+        
+        features.append({
+            'ticker': entry.get('ticker'), 'date': entry.get('date'),
             'forward_looking_ratio': forward_looking_ratio,
-            'risk_factor_density': risk_factor_density,
-            'quantitative_ratio': quantitative_ratio
-        }
-        features.append(feature_entry)
-
+            'quantitative_ratio': quantitative_ratio,
+            'positive_tone_density': positive_tone_density
+        })
+        
     return pd.DataFrame(features)
