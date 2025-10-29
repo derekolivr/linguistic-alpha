@@ -1,66 +1,69 @@
-# Linguistic Alpha
+# Linguistic Alpha: Stock Market Dashboard
 
-This project aims to find alpha in financial markets by analyzing the linguistic properties of corporate earnings calls and SEC filings. The core hypothesis is that the way executives communicate can predict future stock price volatility.
+Welcome to the Linguistic Alpha Stock Market Dashboard! This application, built for a hackathon, leverages Natural Language Processing (NLP) to derive insights from financial documents and combines them with market data. It allows users to create profiles, analyze top companies from major stock indices, and predict future stock performance.
 
-## Getting Started
+## Features
 
-Follow these instructions to set up your local development environment and run the analysis notebook.
+- **User Authentication**: Secure sign-up and login functionality.
+- **Multi-Page App**: A clean, organized user interface with separate pages for different features.
+- **Stock Index Selection**: Analyze top companies from the S&P 500 and NASDAQ 100.
+- **Company Analysis**: View detailed linguistic metrics for selected companies (data permitting).
+- **AI-Powered Stock Prediction**: Generate a 6-month stock price forecast using a time-series model (Prophet).
 
-### Prerequisites
+## Project Structure
 
-- Python 3.9+
-- [Visual Studio Code](https://code.visualstudio.com/)
-- [Python Extension for VS Code](https://marketplace.visualstudio.com/items?itemName=ms-python.python)
+```
+linguistic-alpha/
+├── dashboard/
+│   ├── app.py              # Main app: handles login/signup
+│   ├── helpers.py          # Shared functions (data loading, prediction)
+│   └── pages/
+│       ├── 1_Index_Selection.py
+│       └── 2_Company_Analysis.py
+├── data/
+├── output/
+├── requirements.txt
+└── README.md
+```
 
-### Setup Instructions
+## Installation
 
-1.  **Clone the Repository**
+1.  **Clone the Repository**:
 
     ```bash
-    git clone <your-repository-url>
+    git clone <your-repo-url>
     cd linguistic-alpha
     ```
 
-2.  **Create and Activate the Virtual Environment**
+2.  **Create a Virtual Environment**:
 
-    We use a `venv` to manage project dependencies.
+    ```bash
+    python -m venv venv
+    source venv/bin/activate  # On Windows use `venv\Scripts\activate`
+    ```
 
-    - **Create the environment:**
-      ```bash
-      python3 -m venv venv
-      ```
-    - **Activate it:** - On macOS/Linux:
-      `bash
-  source venv/bin/activate
-  ` - On Windows:
-      `bash
-  .\\venv\\Scripts\\activate
-  `
-      You'll know it's activated when you see `(venv)` at the beginning of your terminal prompt.
-
-3.  **Install Dependencies**
+3.  **Install Dependencies**:
     ```bash
     pip install -r requirements.txt
     ```
 
-### Running the Analysis Notebook
+## Usage
 
-The primary analysis is done in a Jupyter Notebook, which allows for interactive exploration and visualization of the data.
-
-1.  **Open the Project in VS Code**
+1.  **Run the Application**:
 
     ```bash
-    code .
+    streamlit run dashboard/app.py
     ```
 
-2.  **Open the Notebook**
-    Navigate to and open the `analysis/backtesting.ipynb` file in VS Code.
+2.  **Access the Dashboard**:
+    Open your web browser and navigate to the local URL provided by Streamlit (usually `http://localhost:8501`).
 
-3.  **Select the Python Kernel**
+## Deployment on Streamlit Community Cloud
 
-    - When you open the notebook, VS Code may prompt you to select a kernel. Click on "Select Kernel" in the top right.
-    - Choose the Python interpreter that is located inside your `venv` directory (e.g., `venv/bin/python`). If it's not listed, you can select "Python Environments" and browse to find it.
-    - Once selected, the top right of the notebook interface should show `(venv)`.
+1.  **Push to GitHub**: Make sure your code is in a public GitHub repository.
 
-4.  **Run the Cells**
-    You can now run the cells in the notebook one by one to execute the analysis pipeline, see the dataframes, and view the correlation results.
+2.  **Deploy on Streamlit**:
+    - Sign in to [share.streamlit.io](https://share.streamlit.io/).
+    - Click on "New app" and select your repository and branch.
+    - Set the **Main file path** to `dashboard/app.py`.
+    - Click "Deploy!".

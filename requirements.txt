@@ -7,3 +7,5 @@ streamlit
 textstat
 requests
 beautifulsoup4
+matplotlib
+prophet
