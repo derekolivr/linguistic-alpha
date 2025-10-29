@@ -59,7 +59,17 @@ def run_transcript_feature_engineering():
     merged_features = pd.merge(core_features, mda_features, on=['ticker', 'date'])
     merged_features = pd.merge(merged_features, risk_features, on=['ticker', 'date'])
     
-    # 4. Integrate Stock Performance Data
+    # 4. Calculate Z-Scores for Normalization
+    linguistic_cols = [col for col in merged_features.columns if col not in ['ticker', 'date', 'speaker']]
+    
+    # Group by ticker and calculate z-score for each feature
+    for col in linguistic_cols:
+        # The transform function applies a function to each group and returns a series aligned with the original index
+        merged_features[f'{col}_zscore'] = merged_features.groupby('ticker')[col].transform(
+            lambda x: (x - x.mean()) / x.std() if x.std() > 0 else 0
+        )
+    
+    # 5. Integrate Stock Performance Data
     performance_data = []
     for _, row in merged_features.iterrows():
         ret, vol = get_next_quarter_performance(row['ticker'], row['date'])
@@ -70,7 +80,7 @@ def run_transcript_feature_engineering():
     
     performance_df = pd.DataFrame(performance_data)
     
-    # 5. Combine all data and save
+    # 6. Combine all data and save
     final_df = pd.concat([merged_features.reset_index(drop=True), performance_df.reset_index(drop=True)], axis=1)
     
     # Save to CSV

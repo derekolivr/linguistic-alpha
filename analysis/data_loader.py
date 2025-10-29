@@ -13,7 +13,7 @@ def download_and_process_transcripts():
     
     # Define the tickers and date range
     target_tickers = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA']
-    start_year = 2023
+    start_year = 2018
     end_year = 2024
     
     # Filter for the target tickers and years

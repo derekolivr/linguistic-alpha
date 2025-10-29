@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import os
+import statsmodels.api as sm
 
 st.set_page_config(layout="wide", page_title="Earnings Transcript Analysis")
 
@@ -24,14 +25,24 @@ if df is not None:
     tickers = df['ticker'].unique()
     selected_ticker = st.sidebar.selectbox("Select a Company", tickers)
 
+    analysis_mode = st.sidebar.radio(
+        "Select Analysis Mode",
+        ("Raw Values", "Normalized (Z-score)")
+    )
+
     # --- Single-Company Time Series Analysis ---
     st.header(f"Time Series Analysis for {selected_ticker}")
     company_df = df[df['ticker'] == selected_ticker].sort_values('date')
     
     # Let user select a feature to plot
+    if analysis_mode == "Raw Values":
+        feature_cols = [col for col in df.columns if not col.endswith('_zscore') and col not in ['ticker', 'date', 'speaker', 'next_quarter_return', 'next_quarter_volatility']]
+    else: # Normalized
+        feature_cols = [col for col in df.columns if col.endswith('_zscore')]
+
     feature_to_plot = st.selectbox(
-        "Select a Linguistic Feature to Analyze",
-        [col for col in df.columns if col not in ['ticker', 'date', 'speaker']]
+        f"Select a Linguistic Feature to Analyze ({analysis_mode})",
+        feature_cols
     )
 
     fig = px.line(company_df, x='date', y=feature_to_plot, title=f'{feature_to_plot} Over Time for {selected_ticker}', markers=True)
@@ -60,14 +71,33 @@ if df is not None:
     with col2:
         # Correlation plot
         st.subheader("Correlation Analysis")
+        
+        if analysis_mode == "Raw Values":
+            correlation_feature_cols = [col for col in df.columns if 'score' in col or 'ratio' in col or 'density' in col and not col.endswith('_zscore')]
+        else: # Normalized
+            correlation_feature_cols = [col for col in df.columns if col.endswith('_zscore')]
+
         correlation_feature = st.selectbox(
-            "Select Feature for Correlation with Next Quarter Return",
-            [col for col in df.columns if 'score' in col or 'ratio' in col or 'density' in col]
+            f"Select Feature for Correlation with Next Quarter Return ({analysis_mode})",
+            correlation_feature_cols
         )
         
         if correlation_feature:
+            # --- R-squared Calculation ---
+            plot_df = df.dropna(subset=[correlation_feature, 'next_quarter_return'])
+            X = plot_df[correlation_feature]
+            y = plot_df['next_quarter_return']
+            
+            # Add a constant for the intercept
+            X = sm.add_constant(X)
+            
+            model = sm.OLS(y, X).fit()
+            r_squared = model.rsquared
+            
+            st.metric(label="R-squared", value=f"{r_squared:.4f}")
+            
             fig_scatter = px.scatter(
-                df.dropna(subset=[correlation_feature, 'next_quarter_return']),
+                plot_df,
                 x=correlation_feature, 
                 y='next_quarter_return',
                 hover_data=['ticker', 'date'],

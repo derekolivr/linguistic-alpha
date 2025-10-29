@@ -18,6 +18,8 @@ except NameError:
 from analysis.helpers import configure_nltk_path
 configure_nltk_path() # Configure NLTK path BEFORE using its modules
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
+from nltk.tokenize import sent_tokenize
+import numpy as np
 
 def calculate_core_linguistic_features(data):
     """Calculates "Core" linguistic features from standard filings."""
@@ -41,7 +43,15 @@ def calculate_core_linguistic_features(data):
 
         # Features that DO NOT depend on the tokenizer change
         complexity_score = textstat.flesch_kincaid_grade(text)
-        sentiment_score = sid.polarity_scores(text)['compound']
+        
+        # --- MODIFIED SENTIMENT ANALYSIS ---
+        # VADER is not reliable on long documents. We analyze sentence-by-sentence.
+        sentences = sent_tokenize(text)
+        if sentences:
+            sentence_sentiments = [sid.polarity_scores(sentence)['compound'] for sentence in sentences]
+            sentiment_score = np.mean(sentence_sentiments)
+        else:
+            sentiment_score = 0
         
         # Features that now use the new tokenizer
         generalizing_score = sum(1 for word in tokens if word in generalizing_words) / len(tokens)
