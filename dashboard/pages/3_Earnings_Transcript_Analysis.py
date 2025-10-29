@@ -72,21 +72,27 @@ if df is not None:
         # Correlation plot
         st.subheader("Correlation Analysis")
         
+        # Add a selector for the correlation target
+        correlation_target = st.selectbox(
+            "Select Target for Correlation",
+            ("next_quarter_return", "next_quarter_volatility")
+        )
+        
         if analysis_mode == "Raw Values":
             correlation_feature_cols = [col for col in df.columns if 'score' in col or 'ratio' in col or 'density' in col and not col.endswith('_zscore')]
         else: # Normalized
             correlation_feature_cols = [col for col in df.columns if col.endswith('_zscore')]
 
         correlation_feature = st.selectbox(
-            f"Select Feature for Correlation with Next Quarter Return ({analysis_mode})",
+            f"Select Feature for Correlation with {correlation_target}",
             correlation_feature_cols
         )
         
         if correlation_feature:
             # --- R-squared Calculation ---
-            plot_df = df.dropna(subset=[correlation_feature, 'next_quarter_return'])
+            plot_df = df.dropna(subset=[correlation_feature, correlation_target])
             X = plot_df[correlation_feature]
-            y = plot_df['next_quarter_return']
+            y = plot_df[correlation_target]
             
             # Add a constant for the intercept
             X = sm.add_constant(X)
@@ -99,9 +105,9 @@ if df is not None:
             fig_scatter = px.scatter(
                 plot_df,
                 x=correlation_feature, 
-                y='next_quarter_return',
+                y=correlation_target,
                 hover_data=['ticker', 'date'],
-                title=f'Correlation: {correlation_feature} vs. Next Quarter Return',
+                title=f'Correlation: {correlation_feature} vs. {correlation_target}',
                 trendline="ols"  # Ordinary Least Squares trendline
             )
             st.plotly_chart(fig_scatter, use_container_width=True)

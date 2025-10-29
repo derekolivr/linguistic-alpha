@@ -69,7 +69,26 @@ def run_transcript_feature_engineering():
             lambda x: (x - x.mean()) / x.std() if x.std() > 0 else 0
         )
     
-    # 5. Integrate Stock Performance Data
+    # 5. Create a Composite Risk Score
+    # This score combines several risk-related z-scores into a single metric.
+    # We use -sentiment_score so that lower-than-average sentiment increases the risk.
+    risk_components = [
+        'complexity_score_zscore',
+        'risk_keyword_density_zscore',
+    ]
+    # Ensure sentiment score z-score is present before trying to negate it
+    if 'sentiment_score_zscore' in merged_features.columns:
+        merged_features['neg_sentiment_zscore'] = -merged_features['sentiment_score_zscore']
+        risk_components.append('neg_sentiment_zscore')
+
+    merged_features['composite_risk_score'] = merged_features[risk_components].mean(axis=1)
+
+    # Also calculate the z-score of the composite score itself for trend analysis
+    merged_features['composite_risk_score_zscore'] = merged_features.groupby('ticker')['composite_risk_score'].transform(
+        lambda x: (x - x.mean()) / x.std() if x.std() > 0 else 0
+    )
+    
+    # 6. Integrate Stock Performance Data
     performance_data = []
     for _, row in merged_features.iterrows():
         ret, vol = get_next_quarter_performance(row['ticker'], row['date'])
@@ -80,7 +99,7 @@ def run_transcript_feature_engineering():
     
     performance_df = pd.DataFrame(performance_data)
     
-    # 6. Combine all data and save
+    # 7. Combine all data and save
     final_df = pd.concat([merged_features.reset_index(drop=True), performance_df.reset_index(drop=True)], axis=1)
     
     # Save to CSV
