@@ -12,3 +12,5 @@ prophet
 datasets
 statsmodels
 plotly
+scikit-learn
+xgboost

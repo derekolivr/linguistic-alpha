@@ -88,19 +88,66 @@ def run_transcript_feature_engineering():
         lambda x: (x - x.mean()) / x.std() if x.std() > 0 else 0
     )
     
-    # 6. Integrate Stock Performance Data
-    performance_data = []
-    for _, row in merged_features.iterrows():
-        ret, vol = get_next_quarter_performance(row['ticker'], row['date'])
-        performance_data.append({
-            'next_quarter_return': ret,
-            'next_quarter_volatility': vol
-        })
+    # 6. Integrate Stock Performance Data (Efficient Batch Method)
+    print("Downloading all required stock data in a single batch...")
     
-    performance_df = pd.DataFrame(performance_data)
+    # Determine the date range for all stock data needed
+    merged_features['date'] = pd.to_datetime(merged_features['date'])
+    min_date = merged_features['date'].min()
+    max_date = merged_features['date'].max() + timedelta(days=90)
     
-    # 7. Combine all data and save
+    # Get unique tickers
+    tickers = merged_features['ticker'].unique().tolist()
+    
+    # Download all stock data in one go
+    try:
+        all_stock_data = yf.download(tickers, start=min_date, end=max_date, auto_adjust=False, progress=False)
+    except Exception as e:
+        print(f"Failed to download bulk stock data: {e}")
+        return
+
+    def calculate_performance(row):
+        ticker = row['ticker']
+        start_date = row['date']
+        end_date = start_date + timedelta(days=90)
+        
+        # Slice the relevant data from the downloaded batch
+        stock_slice = all_stock_data.loc[start_date:end_date]
+        
+        # Check if the slice is empty or the ticker data is missing
+        if stock_slice.empty or ('Adj Close', ticker) not in stock_slice.columns:
+            return pd.Series([None, None], index=['next_quarter_return', 'next_quarter_volatility'])
+            
+        adj_close = stock_slice['Adj Close'][ticker].dropna()
+
+        if len(adj_close) < 2:
+            return pd.Series([None, None], index=['next_quarter_return', 'next_quarter_volatility'])
+
+        # Calculate return and volatility
+        start_price = adj_close.iloc[0]
+        end_price = adj_close.iloc[-1]
+        next_quarter_return = (end_price - start_price) / start_price
+        
+        daily_return = adj_close.pct_change()
+        next_quarter_volatility = daily_return.std()
+        
+        return pd.Series([next_quarter_return, next_quarter_volatility], index=['next_quarter_return', 'next_quarter_volatility'])
+
+    print("Calculating performance metrics for each transcript...")
+    performance_df = merged_features.apply(calculate_performance, axis=1)
+
+    # 7. Combine all data
     final_df = pd.concat([merged_features.reset_index(drop=True), performance_df.reset_index(drop=True)], axis=1)
+
+    # 8. Create Classification Targets
+    # Return Class: 1 if return is positive, 0 otherwise
+    final_df['return_class'] = (final_df['next_quarter_return'] > 0).astype(int)
+
+    # Volatility Class: 1 if volatility is above the stock's historical median, 0 otherwise
+    # Need to handle potential NaNs in the volatility column before calculating median
+    final_df['volatility_class'] = final_df.groupby('ticker')['next_quarter_volatility'].transform(
+        lambda x: (x > x.median()).astype(int) if x.notna().any() else x
+    )
     
     # Save to CSV
     output_path = 'output/transcript_features_with_performance.csv'
