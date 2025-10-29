@@ -8,3 +8,6 @@ venv/
 
 # macOS
 .DS_Store
+
+# Project Files
+Project details.md

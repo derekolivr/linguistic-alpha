@@ -106,6 +106,7 @@ def render_dashboard():
     st.title("Welcome to the Dashboard")
     st.info("Please select a page from the sidebar to begin your analysis.")
     st.page_link("pages/1_Index_Selection.py", label="Start Analysis", icon="📈")
+    st.page_link("pages/3_Earnings_Transcript_Analysis.py", label="Earnings Transcript Analysis", icon="🗣️")
 
     if st.sidebar.button("Logout"):
         st.session_state['authenticated'] = False

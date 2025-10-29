@@ -23,6 +23,7 @@ from analysis.features.risk_factors import (
     calculate_risk_specificity,
     calculate_risk_factor_change
 )
+from analysis.transcript_feature_engineering import run_transcript_feature_engineering
 
 def main():
     """
@@ -84,6 +85,11 @@ def main():
 
     print(f"Successfully saved {len(final_features_df)} records to 'output/final_linguistic_features.csv'")
     print("\n--- Pipeline Finished ---")
+
+    print("\n--- Starting Earnings Transcript Analysis Pipeline ---")
+    run_transcript_feature_engineering()
+    print("--- Earnings Transcript Analysis Finished ---")
+
 
 if __name__ == "__main__":
     main()
