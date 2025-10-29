@@ -1,5 +1,7 @@
 # Linguistic Alpha: Stock Market Dashboard
 
+**[🚀 View the Live App Here](https://derekolivr-linguistic-alpha-dashboardapp-fguagr.streamlit.app/)**
+
 Welcome to the Linguistic Alpha Stock Market Dashboard! This application, built for a hackathon, leverages Natural Language Processing (NLP) to derive insights from financial documents and combines them with market data. It allows users to create profiles, analyze top companies from major stock indices, and predict future stock performance.
 
 ## Features
@@ -67,3 +69,5 @@ linguistic-alpha/
     - Click on "New app" and select your repository and branch.
     - Set the **Main file path** to `dashboard/app.py`.
     - Click "Deploy!".
+
+The live application is hosted at: [https://derekolivr-linguistic-alpha-dashboardapp-fguagr.streamlit.app/](https://derekolivr-linguistic-alpha-dashboardapp-fguagr.streamlit.app/)
