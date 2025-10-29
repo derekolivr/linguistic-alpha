@@ -1,0 +1,4 @@
+ticker,date,event_type,source,Attack_Score,specificity_score,Rebuttal_Severity_Score
+TSLA,2023-03-01,Short_Seller_Report,Hindenburg Research,59.57,0.0,
+TSLA,2023-03-02,Company_Rebuttal,Tesla Inc.,,0.0383,27.67
+GOOG,2022-11-15,Activist_Investor_Letter,TCI Fund Management,15.38,0.0163,

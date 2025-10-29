@@ -5,3 +5,5 @@ textblob
 yfinance
 streamlit
 textstat
+requests
+beautifulsoup4

@@ -8,108 +8,120 @@
 
 import streamlit as st
 import pandas as pd
-import os
+import altair as alt
 import sys
+import os
 
-# --- Path Setup ---
-# This is crucial for allowing this script to import modules from other folders
-# like 'analysis' and 'utils'.
-try:
-    # This assumes the script is in 'dashboard/', so we go up one level to the root.
-    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-    if project_root not in sys.path:
-        sys.path.append(project_root)
-except NameError:
-    # Fallback for interactive environments
-    project_root = os.path.abspath(os.path.join(os.getcwd(), '..'))
-    if project_root not in sys.path:
-        sys.path.append(project_root)
+# Add the parent directory to the Python path to allow importing 'analysis' module
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
+from analysis.feature_engineering import calculate_core_linguistic_features, calculate_catalyst_score, find_project_root, load_mock_data
+from analysis.backtesting import get_stock_data
 
-# --- Import Your Custom Analysis Functions ---
-from analysis.feature_engineering import (
-    load_mock_data,
-    calculate_core_linguistic_features,
-    calculate_catalyst_score
-)
-
-# --- Import the Helper Function from the 'utils' package ---
-# This function is no longer defined in this file. It is now a reusable utility.
-from utils.calculations import calculate_historical_pnl
-
-
-# ---------------- STREAMLIT APP MAIN BODY ----------------
-
-st.set_page_config(layout="wide")
-st.title("Linguistic Alpha: Analysis Dashboard")
-
-st.info(
-    "This dashboard analyzes company communications to identify linguistic risk factors. "
-    "Select a company from the analysis table to simulate a historical investment."
-)
-
-# --- STEP 1: Run the Linguistic Analysis (using mock data for this example) ---
-try:
-    st.header("1. Linguistic Analysis Results")
-    
-    # Load the mock data for company filings
-    # In a real application, this would come from your live parser.
-    core_mock_data = load_mock_data('mock_filings.json', project_root)
-    core_features_df = calculate_core_linguistic_features(core_mock_data)
-    
-    # Display the analysis table
-    st.write("Below are the calculated linguistic risk scores for a sample of companies.")
-    st.dataframe(core_features_df)
-    
-    # Create the dropdown for the user to select a ticker
-    company_tickers = core_features_df['ticker'].unique().tolist()
-    selected_ticker = st.selectbox(
-        "Select a company to simulate a historical investment:",
-        options=company_tickers
+def run():
+    st.set_page_config(
+        page_title="Linguistic Alpha Signal Dashboard",
+        page_icon="📈",
+        layout="wide",
+        initial_sidebar_state="expanded"
     )
 
-    # --- STEP 2: The P&L Calculator Section ---
-    # This entire block will only appear if a ticker has been selected.
-    if selected_ticker:
-        st.header(f"2. Historical P&L Simulation for {selected_ticker}")
+    st.title("📈 Linguistic Alpha Signal Dashboard")
+    st.markdown("""
+    Welcome to the **Linguistic Alpha Signal Dashboard**. This platform analyzes the language used in corporate communications 
+    to derive predictive signals about stock performance and volatility. Select a signal type and a company to explore the data.
+    """)
 
-        investment_amount = st.number_input(
-            "If you had invested this amount 6 months ago:",
-            min_value=100,
-            value=10000,
-            step=100,
-            key=f"pnl_input_{selected_ticker}" # Add a key to prevent widget state issues
-        )
-
-        if st.button("Calculate Historical P&L"):
-            with st.spinner(f"Fetching data and calculating P&L for {selected_ticker}..."):
-                # Call the imported utility function
-                pnl_data = calculate_historical_pnl(selected_ticker, investment_amount)
-
-                if "error" in pnl_data:
-                    st.error(pnl_data["error"])
-                else:
-                    # Display the results using st.metric for a nice visual
-                    st.metric(
-                        label="Current Value of Investment",
-                        value=f"${pnl_data['current_value']:,.2f}",
-                        delta=f"${pnl_data['profit_loss']:,.2f} ({pnl_data['percent_return']:.2%})"
-                    )
-                    
-                    st.write(
-                        f"An investment of **${pnl_data['initial_investment']:,.2f}** made on "
-                        f"**{pnl_data['start_date']}** (at a price of ${pnl_data['initial_price']:.2f}) "
-                        f"would be worth **${pnl_data['current_value']:,.2f}** today."
-                    )
-
-                    # Display a price chart for context
-                    st.line_chart(pnl_data['price_history'])
-
-# --- Error Handling ---
-except FileNotFoundError:
-    st.error(
-        "Error: Could not find mock data files in the 'data/' directory. "
-        "Please ensure 'data/mock_filings.json' exists in your project."
+    # --- Sidebar for User Input ---
+    st.sidebar.header("Dashboard Controls")
+    signal_type = st.sidebar.radio(
+        "Select Signal Type",
+        ('Core Signals (Company Filings)', 'Catalyst Signals (Crucial Events)'),
+        help="**Core Signals** track the general communication style over time. **Catalyst Signals** analyze high-impact, event-driven texts."
     )
-except Exception as e:
-    st.error(f"An unexpected error occurred. Please check the console for details. Error: {e}")
+
+    # --- Load Data Based on Selection ---
+    try:
+        project_root = find_project_root()
+        if 'Core' in signal_type:
+            mock_filings = load_mock_data('mock_filings.json', project_root)
+            features_df = calculate_core_linguistic_features(mock_filings)
+            st.sidebar.info("Displaying **Core Linguistic Features** derived from standard company filings (e.g., 10-Ks).")
+        else:
+            mock_events = load_mock_data('mock_events.json', project_root)
+            features_df = calculate_catalyst_score(mock_events)
+            st.sidebar.info("Displaying **Catalyst Event Scores** derived from critical texts like short-seller reports.")
+        
+        features_df['date'] = pd.to_datetime(features_df['date'])
+    except FileNotFoundError as e:
+        st.error(f"Failed to load mock data. Please ensure the 'data' directory with mock JSON files exists. Error: {e}")
+        return
+
+    # --- Ticker Selection ---
+    tickers = sorted(features_df['ticker'].unique())
+    selected_ticker = st.sidebar.selectbox(
+        'Select a Company Ticker',
+        tickers,
+        index=0,
+        help="Choose a company to analyze from the mock dataset."
+    )
+
+    # Filter data for the selected ticker
+    ticker_df = features_df[features_df['ticker'] == selected_ticker].copy()
+
+    # --- Main Panel Display ---
+    st.header(f"Analysis for: **{selected_ticker}**")
+
+    if 'Core' in signal_type:
+        display_core_signals(ticker_df, selected_ticker)
+    else:
+        display_catalyst_signals(ticker_df)
+
+def display_core_signals(ticker_df, ticker):
+    """Render the dashboard for Core Linguistic Signals."""
+    st.subheader("Core Linguistic Features Over Time")
+    
+    # Melt the DataFrame to make it suitable for Altair
+    df_melted = ticker_df.melt(
+        id_vars=['date', 'ticker', 'speaker'], 
+        value_vars=['complexity_score', 'sentiment_score', 'generalizing_score', 'self_reference_score'],
+        var_name='Linguistic Feature', 
+        value_name='Score'
+    )
+
+    # Interactive Chart
+    chart = alt.Chart(df_melted).mark_line(point=True).encode(
+        x=alt.X('date:T', title='Date'),
+        y=alt.Y('Score:Q', title='Feature Score', scale=alt.Scale(zero=False)),
+        color='Linguistic Feature:N',
+        tooltip=['date:T', 'speaker:N', 'Linguistic Feature:N', 'Score:Q']
+    ).interactive().properties(
+        title=f"Linguistic Features for {ticker}"
+    )
+    st.altair_chart(chart, use_container_width=True)
+
+    # Data Table
+    st.subheader("Underlying Feature Data")
+    st.dataframe(ticker_df)
+
+def display_catalyst_signals(ticker_df):
+    """Render the dashboard for Catalyst Event Signals."""
+    st.subheader("Catalyst Event Scores")
+
+    # Display scores in a clean format
+    for _, row in ticker_df.iterrows():
+        event_label = row.get('Attack_Score', row.get('Rebuttal_Severity_Score'))
+        event_name = 'Attack Score' if 'Attack_Score' in row else 'Rebuttal Severity Score'
+        
+        with st.container():
+            st.metric(label=f"**{row['event_type']} from {row['source']} on {row['date'].strftime('%Y-%m-%d')}**",
+                      value=event_label,
+                      help=f"A higher score indicates a more severe negative event. Specificity was {row['specificity_score']:.2%}.")
+    
+    # Data Table
+    st.subheader("Underlying Event Data")
+    st.dataframe(ticker_df)
+
+
+if __name__ == "__main__":
+    run()
