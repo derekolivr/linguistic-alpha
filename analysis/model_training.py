@@ -7,80 +7,45 @@ import joblib
 
 def train_all_models():
     """
-    Trains and saves two separate stacking ensemble models: one for predicting
-    return direction and one for predicting volatility regime.
+    Trains the final "production" models on all available historical data
+    and saves them for future prediction.
     """
     file_path = 'output/transcript_features_with_performance.csv'
     if not os.path.exists(file_path):
         print(f"Error: Data file not found at {file_path}")
         return
 
-    df = pd.read_csv(file_path)
-    df['date'] = pd.to_datetime(df['date'])
-
-    # --- Temporal Split ---
-    train_df = df[df['date'].dt.year < 2024]
-    # Note: The test set is implicitly the 2024 data, which will be used in backtest.py
+    df = pd.read_csv(file_path).dropna(subset=['return_class', 'volatility_class'])
 
     # --- Feature Selection ---
-    # We use z-scores and the composite score for prediction
     feature_cols = [col for col in df.columns if col.endswith('_zscore')]
-    
-    # --- Define Models ---
-    # Base estimators for the stacking model
-    estimators = [
-        ('rf', RandomForestClassifier(n_estimators=100, random_state=42)),
-        ('xgb', XGBClassifier(use_label_encoder=False, eval_metric='logloss', random_state=42))
-    ]
-    
-    # Stacking classifier definition
-    stacking_classifier = StackingClassifier(
-        estimators=estimators, final_estimator=LogisticRegression()
-    )
+    X_full = df[feature_cols].fillna(0)
 
-    # --- Train and Save Return Prediction Model ---
-    print("Training return prediction model...")
-    X_train_return = train_df[feature_cols].fillna(0) # Fill NaNs for safety
-    y_train_return = train_df['return_class']
-    
-    # Calculate class weight for the returns model to handle imbalance
-    scale_pos_weight_return = (y_train_return == 0).sum() / (y_train_return == 1).sum()
-
+    # --- Train and Save Return Production Model ---
+    print("Training FINAL return prediction model on all data...")
+    y_return = df['return_class']
+    scale_pos_weight_return = (y_return == 0).sum() / (y_return == 1).sum()
     estimators_return = [
         ('rf', RandomForestClassifier(n_estimators=100, random_state=42, class_weight='balanced')),
         ('xgb', XGBClassifier(use_label_encoder=False, eval_metric='logloss', random_state=42, scale_pos_weight=scale_pos_weight_return))
     ]
     stacking_classifier_return = StackingClassifier(estimators=estimators_return, final_estimator=LogisticRegression())
+    return_model = stacking_classifier_return.fit(X_full, y_return)
+    joblib.dump(return_model, 'output/return_classifier_production.joblib')
+    print("Return production model trained and saved.")
 
-    # Ensure we have data to train on
-    if not X_train_return.empty and not y_train_return.empty:
-        return_model = stacking_classifier_return.fit(X_train_return, y_train_return)
-        joblib.dump(return_model, 'output/return_classifier.joblib')
-        print("Return model trained and saved successfully.")
-    else:
-        print("Could not train return model due to lack of data.")
-
-    # --- Train and Save Volatility Prediction Model ---
-    print("\nTraining volatility prediction model...")
-    X_train_vol = train_df[feature_cols].fillna(0) # Fill NaNs for safety
-    y_train_vol = train_df['volatility_class']
-
-    # Calculate class weight for the volatility model as well (good practice)
-    scale_pos_weight_vol = (y_train_vol == 0).sum() / (y_train_vol == 1).sum()
-
+    # --- Train and Save Volatility Production Model ---
+    print("\nTraining FINAL volatility prediction model on all data...")
+    y_vol = df['volatility_class']
+    scale_pos_weight_vol = (y_vol == 0).sum() / (y_vol == 1).sum()
     estimators_vol = [
         ('rf', RandomForestClassifier(n_estimators=100, random_state=42, class_weight='balanced')),
         ('xgb', XGBClassifier(use_label_encoder=False, eval_metric='logloss', random_state=42, scale_pos_weight=scale_pos_weight_vol))
     ]
     stacking_classifier_vol = StackingClassifier(estimators=estimators_vol, final_estimator=LogisticRegression())
-
-    # Ensure we have data to train on
-    if not X_train_vol.empty and not y_train_vol.empty:
-        volatility_model = stacking_classifier_vol.fit(X_train_vol, y_train_vol)
-        joblib.dump(volatility_model, 'output/volatility_classifier.joblib')
-        print("Volatility model trained and saved successfully.")
-    else:
-        print("Could not train volatility model due to lack of data.")
+    volatility_model = stacking_classifier_vol.fit(X_full, y_vol)
+    joblib.dump(volatility_model, 'output/volatility_classifier_production.joblib')
+    print("Volatility production model trained and saved.")
 
 if __name__ == '__main__':
     train_all_models()

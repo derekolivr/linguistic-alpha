@@ -12,7 +12,11 @@ def download_and_process_transcripts():
     df = pd.DataFrame(dataset)
     
     # Define the tickers and date range
-    target_tickers = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA']
+    target_tickers = [
+        'MSFT', 'AAPL', 'NVDA', 'GOOGL', 'META', 
+        'AMZN', 'NFLX', 'AMD', 'CRM', 'ADBE', 
+        'INTU', 'NOW', 'AMAT', 'CSCO'
+    ]
     start_year = 2010
     end_year = 2024
     
