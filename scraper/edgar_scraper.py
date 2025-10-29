@@ -18,34 +18,22 @@ def scrape_edgar_htm(url, output_dir="output"):
             "User-Agent": "LinguisticAlpha/1.0 (contact@example.com)"
         }
         response = requests.get(url, headers=headers)
-        response.raise_for_status()  # Raise an exception for bad status codes
+        response.raise_for_status()  
 
         soup = BeautifulSoup(response.content, "html.parser")
-
-        # Find the main body of the document to avoid header metadata
         body = soup.find('body')
         if not body:
             print("No <body> tag found in the document.")
             return
-
-        # Decompose (remove) all XBRL tags, tables, and other non-prose elements
         for tag in body.find_all(['table', 'script', 'style']):
             tag.decompose()
-        
-        # Remove all tags with 'ix:' prefix (Inline XBRL tags)
         for tag in body.find_all(lambda t: t.name and t.name.startswith('ix:')):
             tag.decompose()
-        
-        # Get the text, using a space as a separator to allow for custom formatting
         text = body.get_text(separator=' ', strip=True)
-        
-        # Clean up the text:
-        # 1. Replace multiple whitespace characters with a single space.
+
         text = re.sub(r'\s+', ' ', text).strip()
         # 2. Add newlines before "Item" headings to restore some document structure for readability.
         text = re.sub(r'(?i)(Item\s+\d+\w*\.)', r'\n\n\1', text)
-
-        # Create output directory if it doesn't exist
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
 
@@ -65,5 +53,5 @@ def scrape_edgar_htm(url, output_dir="output"):
 
 if __name__ == "__main__":
     # The URL from the user prompt.
-    filing_url = "https://www.sec.gov/Archives/edgar/data/0000320193/000032019325000073/aapl-20250628.htm"
+    filing_url = "https://www.sec.gov/Archives/edgar/data/1413329/000162828025046179/pm-20250930.htm"
     scrape_edgar_htm(filing_url)
