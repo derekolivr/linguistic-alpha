@@ -4,9 +4,13 @@ import plotly.express as px
 import os
 import statsmodels.api as sm
 
-st.set_page_config(layout="wide", page_title="Earnings Transcript Analysis")
+st.set_page_config(layout="wide", page_title="Feature Analysis")
 
-st.title("🗣️ Earnings Transcript Analysis")
+st.title("🗣️ Feature Analysis & Correlations")
+st.markdown("""
+This page provides tools to perform an exploratory analysis of the linguistic features extracted from the earnings transcripts. 
+Use the filters in the sidebar to select a company and choose between raw feature values or normalized Z-scores.
+""")
 
 @st.cache_data
 def load_data():
@@ -32,6 +36,7 @@ if df is not None:
 
     # --- Single-Company Time Series Analysis ---
     st.header(f"Time Series Analysis for {selected_ticker}")
+    st.markdown("Track how a single company's linguistic patterns change over time. Are they becoming more complex? Is sentiment dropping?")
     company_df = df[df['ticker'] == selected_ticker].sort_values('date')
     
     # Let user select a feature to plot
@@ -57,6 +62,7 @@ if df is not None:
     with col1:
         # Cross-sectional comparison for a specific quarter
         st.subheader("Cross-Sectional Company Comparison")
+        st.markdown("Compare a specific linguistic feature across all companies for a single quarter.")
         quarters = pd.to_datetime(df['date']).dt.to_period('Q').unique().astype(str)
         selected_quarter = st.selectbox("Select a Quarter", quarters)
         
@@ -71,6 +77,7 @@ if df is not None:
     with col2:
         # Correlation plot
         st.subheader("Correlation Analysis")
+        st.markdown("Explore the relationship between a linguistic feature and a future performance metric. The R-squared value measures how much of the target's variance is explained by the feature.")
         
         # Add a selector for the correlation target
         correlation_target = st.selectbox(
